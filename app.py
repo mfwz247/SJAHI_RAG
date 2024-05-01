@@ -101,25 +101,23 @@ with st.sidebar:
 
     if len(files) == 0:
         st.error("No file were uploaded")
-
-    for file in files:
-        bytes_data = file.read()  # read the content of the file in binary
-        if file.name in os.listdir("data/"):
-            continue
-        else:
-            
-            print(file.name,os.listdir("data/"))
-            with open(os.path.join("docs", file.name), "wb") as f:
-                f.write(bytes_data)  # write this content elsewhere
-    if files:
-
+        index = load_Index()
+        
+    elif len(files)>=len(os.listdir('docs/')): 
+        for file in files:
+            bytes_data = file.read()  # read the content of the file in binary
+            if file.name in os.listdir("data/"):
+                continue
+            else:
+                
+                print(file.name,os.listdir("docs/"))
+                with open(os.path.join("docs", file.name), "wb") as f:
+                   f.write(bytes_data)  # write this content elsewhere
         index = create_index()
-
+        
     else:
 
-        index = load_Index()
-
-
+        index = create_index()
 
 
     
@@ -134,9 +132,9 @@ if "chat_engine" not in st.session_state.keys(): # Initialize the chat engine
     st.session_state.chat_engine = index.as_chat_engine( verbose=True,
     similarity_top_k=5,
     similarity_cutoff=0.7,
-    chat_mode="condense_plus_context",
+    chat_mode="context",
     system_prompt=("""<s>[INST] <<SYS>>
-You are Mufeed who is an AI project of Saudi Japanese Automobile High Institute (SJAHI).
+You are Mufeed who is an AI project of Saudi Japanese Automobile High Institute (SJAHI) which was Founded in 2003.
  Use the context to answer user's question precisly and keep it short no introductions or notes. If you don't know the answer don't make up an answer or rephrase the question.
                    
 {context}
