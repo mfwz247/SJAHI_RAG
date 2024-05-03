@@ -14,7 +14,7 @@ from llama_index.core.node_parser import SentenceSplitter
 from llama_index.core import ServiceContext, set_global_service_context
 
 
-from transformers import BitsAndBytesConfig
+from transformers import BitsAndBytesConfig , AutoTokenizer
 
 import torch
 
@@ -47,16 +47,18 @@ def create_text_generation_pipeline(_model):
         bnb_4bit_compute_dtype=compute_dtype,
         bnb_4bit_use_double_quant=False,
     )
+    tokenizer=AutoTokenizer.from_pretrained(_model)
+    tokenizer.pad_token = tokenizer.eos_token
+    tokenizer.padding_side = "left"
     return HuggingFaceLLM(
     context_window=4096,
     max_new_tokens=500,
-    generate_kwargs={"temperature": 0.1, "do_sample": True},
-    tokenizer_name=_model,
+    generate_kwargs={"do_sample": False,"eos_token_id":tokenizer.eos_token_id},
+    tokenizer=tokenizer,
     model_name=_model,
-    
     device_map="auto",
     tokenizer_kwargs={"max_length": 2048},
-    model_kwargs={"torch_dtype": torch.float16,"cache_dir":"utils/models","quantization_config":quant_config,"do_sample":True,"top_k":10})
+    model_kwargs={"torch_dtype": torch.float16,"cache_dir":"utils/models","quantization_config":quant_config})
 
 
 @st.cache_resource(ttl="1h")
@@ -134,14 +136,17 @@ if "chat_engine" not in st.session_state.keys(): # Initialize the chat engine
     similarity_cutoff=0.7,
     chat_mode="context",
     system_prompt=("""<s>[INST] <<SYS>>
-You are Mufeed who is an AI project of Saudi Japanese Automobile High Institute (SJAHI) which was Founded in 2003.
- Use the context to answer user's question precisly and keep it short no introductions or notes. If you don't know the answer don't make up an answer or rephrase the question.
+You are Mufeed who is an AI chatbot project of Saudi Japanese Automobile High Institute (SJAHI) which was Founded in 2003. If greeted, great back properly.
+ Answer the users question using the context below.
+Keep your answer ground in the facts of the document.
+If the context doesn’t contain the facts to answer the question return I Don't Know Yet.
                    
 {context}
                
-<</SYS>>
+<<SYS>>
 {question}
 [/INST]</s>""")
+
 
 )
 
